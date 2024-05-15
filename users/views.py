@@ -1,3 +1,4 @@
+from django.db.migrations import serializer
 from django.shortcuts import render, redirect
 
 from django.contrib.auth import get_user_model, logout, authenticate
@@ -13,7 +14,10 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
+from users.models import CustomUser, Follow
 from users.serializers import UserSerializer, UserProfileSerializer, UserListSerializer
+from django.shortcuts import get_object_or_404
 
 
 class UserListView(generics.ListAPIView):
@@ -102,3 +106,17 @@ def upload_image(self, request):
 
 class UserRegisterView(generics.CreateAPIView):
     serializer_class = UserSerializer
+
+
+def follow_user(request, user_id):
+    user_to_follow = get_object_or_404(CustomUser, id=user_id)
+    if not request.user.following.filter(id=user_id).exists():
+        Follow.objects.create(follower=request.user, following=user_to_follow)
+        return Response(status=status.HTTP_201_CREATED)
+    return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+def unfollow_user(request, user_id):
+    user_to_unfollow = get_object_or_404(CustomUser, id=user_id)
+    request.user.following.filter(id=user_id).delete()
+    return Response(status=status.HTTP_200_OK)

@@ -46,7 +46,7 @@ class CustomUserManager(BaseUserManager):
 
 def image_path(self, filename):
     filename = (f"{slugify(self.email)}-{uuid.uuid4()}" + pathlib.Path(filename).suffix
-    )
+                )
     return pathlib.Path("upload/user/avatar") / pathlib.Path(filename)
 
 
@@ -54,6 +54,7 @@ class CustomUser(AbstractUser):
     username = None
     email = models.EmailField(_('email address'), unique=True)
     image = models.ImageField(upload_to=image_path, null=True)
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
@@ -64,3 +65,9 @@ class CustomUser(AbstractUser):
 
     class Meta:
         UniqueConstraint(fields=["email"], name="unique_email")
+
+
+class Follow(models.Model):
+    follower = models.ForeignKey(CustomUser, related_name='following', on_delete=models.CASCADE)
+    following = models.ForeignKey(CustomUser, related_name='followers', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
