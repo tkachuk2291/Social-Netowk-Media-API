@@ -1,8 +1,13 @@
+import pathlib
+import uuid
+
 from django.db import models
 
 from django.contrib.auth.base_user import BaseUserManager
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db.models import UniqueConstraint
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 
@@ -39,10 +44,16 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
+def image_path(self, filename):
+    filename = (f"{slugify(self.email)}-{uuid.uuid4()}" + pathlib.Path(filename).suffix
+    )
+    return pathlib.Path("upload/user/avatar") / pathlib.Path(filename)
+
+
 class CustomUser(AbstractUser):
     username = None
     email = models.EmailField(_('email address'), unique=True)
-
+    image = models.ImageField(upload_to=image_path, null=True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
@@ -50,3 +61,6 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email
+
+    class Meta:
+        UniqueConstraint(fields=["email"], name="unique_email")
