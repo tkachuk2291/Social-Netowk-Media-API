@@ -2,6 +2,7 @@ from django.db.migrations import serializer
 from django.shortcuts import render, redirect
 
 from django.contrib.auth import get_user_model, logout, authenticate
+from django.urls import reverse
 from django.views import View
 from rest_framework import generics, status
 from rest_framework.decorators import api_view
@@ -15,8 +16,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from users.models import CustomUser, Follow
-from users.serializers import UserSerializer, UserProfileSerializer, UserListSerializer
+from users.models import CustomUser
+from users.serializers import UserSerializer, UserProfileSerializer, UserListSerializer, UserCreateSerializer
 from django.shortcuts import get_object_or_404
 
 
@@ -86,7 +87,7 @@ class UserLoginView(APIView):
 
 
 class UserProfile(generics.RetrieveUpdateAPIView):
-    queryset = get_user_model
+    queryset = get_user_model()
     user = get_user_model()
     permission_classes = (IsAuthenticated,)
     serializer_class = UserProfileSerializer
@@ -108,15 +109,46 @@ class UserRegisterView(generics.CreateAPIView):
     serializer_class = UserSerializer
 
 
-def follow_user(request, user_id):
-    user_to_follow = get_object_or_404(CustomUser, id=user_id)
-    if not request.user.following.filter(id=user_id).exists():
-        Follow.objects.create(follower=request.user, following=user_to_follow)
-        return Response(status=status.HTTP_201_CREATED)
-    return Response(status=status.HTTP_400_BAD_REQUEST)
+class FollowUserAPIView(APIView):
+    def get(self, request, user_id):
+        try:
+            user_to_follow = get_user_model().objects.get(id=user_id)
+            user = request.user
+            user.following.add(user_to_follow)
+            return Response(status=status.HTTP_200_OK)
+        except get_user_model().DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
 
-def unfollow_user(request, user_id):
-    user_to_unfollow = get_object_or_404(CustomUser, id=user_id)
-    request.user.following.filter(id=user_id).delete()
-    return Response(status=status.HTTP_200_OK)
+class UnfollowUserAPIView(APIView):
+    def get(self, request, user_id):
+        try:
+            user_to_unfollow = get_user_model().objects.get(id=user_id)
+            user = request.user
+            user.following.remove(user_to_unfollow)
+            return Response(status=status.HTTP_200_OK)
+        except get_user_model().DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+class FollowingList(APIView):
+    def get(self, request):
+        user = request.user
+        following_users = user.following.all()
+        serializers = UserListSerializer(following_users, many=True)
+        return Response(serializers.data)
+
+
+class FollowersList(APIView):
+    def get(self, request):
+        user = request.user
+        followers_users = user.followers.all()
+        serializers = UserListSerializer(followers_users, many=True)
+        return Response(serializers.data)
+
+
+class ApiRootView(APIView):
+    def get(self, request, *args, **kwargs):
+        return Response({
+            'users-list': reverse('users-list'),
+        })

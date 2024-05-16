@@ -11,6 +11,7 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 
+
 class CustomUserManager(BaseUserManager):
     """
     Custom user model manager where email is the unique identifiers
@@ -54,7 +55,8 @@ class CustomUser(AbstractUser):
     username = None
     email = models.EmailField(_('email address'), unique=True)
     image = models.ImageField(upload_to=image_path, null=True)
-
+    following = models.ManyToManyField("self", symmetrical=False, related_name="followers")
+    # posts = models.ManyToManyField(Post, related_name="author")
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
@@ -66,8 +68,9 @@ class CustomUser(AbstractUser):
     class Meta:
         UniqueConstraint(fields=["email"], name="unique_email")
 
-
-class Follow(models.Model):
-    follower = models.ForeignKey(CustomUser, related_name='following', on_delete=models.CASCADE)
-    following = models.ForeignKey(CustomUser, related_name='followers', on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
+#
+# class UserFollowing(models.Model):
+#     following = models.ManyToManyField("Profile", symmetrical=False, related_name="followers")
+#     followers = models.ManyToManyField('self', related_name='follower', blank=True)
+#     following = models.ManyToManyField('self', related_name='following', blank=True)
+#     created = models.DateTimeField(auto_now_add=True)
