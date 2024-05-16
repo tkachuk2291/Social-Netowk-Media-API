@@ -1,27 +1,44 @@
-from django.contrib.auth import get_user_model
-from rest_framework import serializers, status
-from rest_framework.validators import UniqueValidator
+from rest_framework import serializers
 
-from blog.models import Post
+from blog.models import Post, PostHashtags
+
+
+class HashtagsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PostHashtags
+        fields = ["id", "hashtags"]
+
+
+class HashtagsListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PostHashtags
+        fields = ["id", "hashtags"]
 
 
 class PostSerializer(serializers.ModelSerializer):
+    hashtags = HashtagsListSerializer(many=True)
+
     author = serializers.CharField(source='user.email', read_only=True)
 
     class Meta:
         model = Post
-        fields = ['title', "content", 'date', "author"]
+        fields = ['title', "content", 'date', "author", "hashtags"]
 
 
 class PostListSerializer(PostSerializer):
     class Meta:
         model = Post
 
-        fields = ["id",'title', "content", 'date', "author"]
+        fields = ["id", 'title', "content", 'date', "author", "hashtags"]
 
 
 class PostCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
-        fields = ["user", 'date', 'title', "content", ]
+        fields = ['date', 'title', "content", "hashtags"]
 
+
+class PostUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = ['title', "content", "hashtags"]

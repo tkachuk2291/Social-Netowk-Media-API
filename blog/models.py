@@ -7,3 +7,8 @@ class Post(models.Model):
     title = models.CharField(max_length=256)
     date = models.DateField(auto_now_add=True)
     content = models.TextField()
+    hashtags = models.ManyToManyField("PostHashtags", related_name="post_hashtags")
+
+
+class PostHashtags(models.Model):
+    hashtags = models.CharField(max_length=256)

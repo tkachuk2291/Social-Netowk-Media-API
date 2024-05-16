@@ -1,8 +1,5 @@
 import pathlib
 import uuid
-
-from django.db import models
-
 from django.contrib.auth.base_user import BaseUserManager
 from django.db import models
 from django.contrib.auth.models import AbstractUser
@@ -11,17 +8,8 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 
-
 class CustomUserManager(BaseUserManager):
-    """
-    Custom user model manager where email is the unique identifiers
-    for authentication instead of usernames.
-    """
-
     def create_user(self, email, password, **extra_fields):
-        """
-        Create and save a User with the given email and password.
-        """
         if not email:
             raise ValueError(_('The Email must be set'))
         email = self.normalize_email(email)
@@ -31,9 +19,6 @@ class CustomUserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password, **extra_fields):
-        """
-        Create and save a SuperUser with the given email and password.
-        """
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
@@ -56,7 +41,6 @@ class CustomUser(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
     image = models.ImageField(upload_to=image_path, null=True)
     following = models.ManyToManyField("self", symmetrical=False, related_name="followers")
-    # posts = models.ManyToManyField(Post, related_name="author")
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
@@ -67,10 +51,3 @@ class CustomUser(AbstractUser):
 
     class Meta:
         UniqueConstraint(fields=["email"], name="unique_email")
-
-#
-# class UserFollowing(models.Model):
-#     following = models.ManyToManyField("Profile", symmetrical=False, related_name="followers")
-#     followers = models.ManyToManyField('self', related_name='follower', blank=True)
-#     following = models.ManyToManyField('self', related_name='following', blank=True)
-#     created = models.DateTimeField(auto_now_add=True)

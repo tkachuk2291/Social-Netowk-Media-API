@@ -1,24 +1,16 @@
-from django.db.migrations import serializer
-from django.shortcuts import render, redirect
-
 from django.contrib.auth import get_user_model, logout, authenticate
 from django.urls import reverse
-from django.views import View
 from rest_framework import generics, status
-from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
-from users.models import CustomUser
-from users.serializers import UserSerializer, UserProfileSerializer, UserListSerializer, UserCreateSerializer
-from django.shortcuts import get_object_or_404
+from users.serializers import (UserSerializer,
+                               UserProfileSerializer,
+                               UserListSerializer,
+                               UserLoginSerializer
+                               )
 
 
 class UserListView(generics.ListAPIView):
@@ -54,26 +46,12 @@ class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        # token = Token.objects.first()
-        # print(token)
-        # token.delete()
-        # print("Request data:", request.data)
         logout(request)
         return Response({'message': "Logout successful"})
-        # # token = Token.objects.get(key=request.data.get('key'))
-        # token = Token.objects.get(key=request.data.get('key'))
-        #
-        # print(token, "TOKEN")
-        # if token:
-        #     print("Token not found")
-        # token.delete()
-        # return Response(status=status.HTTP_200_OK)
 
 
-# class EmailTokenObtainPairView(TokenObtainPairView):
-#     serializer_class = TokenObtainPairSerializer
 class UserLoginView(APIView):
-    serializer_class = UserSerializer
+    serializer_class = UserLoginSerializer
 
     def post(self, request):
         email = request.data.get("email")
@@ -95,14 +73,13 @@ class UserProfile(generics.RetrieveUpdateAPIView):
     def get_object(self):
         return self.request.user
 
-
-@action(methods=["POST"], detail=True, url_path="upload-image")
-def upload_image(self, request):
-    user = self.get_object()
-    serializer = self.get_serializer(user, data=request.data)
-    serializer.is_valid(raise_exception=True)
-    serializer.save()
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    @action(methods=["POST"], detail=True, url_path="upload-image")
+    def upload_image(self, request):
+        user = self.get_object()
+        serializer = self.get_serializer(user, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class UserRegisterView(generics.CreateAPIView):
@@ -110,6 +87,8 @@ class UserRegisterView(generics.CreateAPIView):
 
 
 class FollowUserAPIView(APIView):
+    permission_classes = (IsAuthenticated,)
+
     def get(self, request, user_id):
         try:
             user_to_follow = get_user_model().objects.get(id=user_id)
@@ -121,6 +100,8 @@ class FollowUserAPIView(APIView):
 
 
 class UnfollowUserAPIView(APIView):
+    permission_classes = (IsAuthenticated,)
+
     def get(self, request, user_id):
         try:
             user_to_unfollow = get_user_model().objects.get(id=user_id)
@@ -132,6 +113,8 @@ class UnfollowUserAPIView(APIView):
 
 
 class FollowingList(APIView):
+    permission_classes = (IsAuthenticated,)
+
     def get(self, request):
         user = request.user
         following_users = user.following.all()
@@ -140,15 +123,10 @@ class FollowingList(APIView):
 
 
 class FollowersList(APIView):
+    permission_classes = (IsAuthenticated,)
+
     def get(self, request):
         user = request.user
         followers_users = user.followers.all()
         serializers = UserListSerializer(followers_users, many=True)
         return Response(serializers.data)
-
-
-class ApiRootView(APIView):
-    def get(self, request, *args, **kwargs):
-        return Response({
-            'users-list': reverse('users-list'),
-        })
