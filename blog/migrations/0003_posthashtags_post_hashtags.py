@@ -6,20 +6,30 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('blog', '0002_alter_post_user'),
+        ("blog", "0002_alter_post_user"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='PostHashtags',
+            name="PostHashtags",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('hashtags', models.CharField(max_length=256)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("hashtags", models.CharField(max_length=256)),
             ],
         ),
         migrations.AddField(
-            model_name='post',
-            name='hashtags',
-            field=models.ManyToManyField(related_name='post_hashtags', to='blog.posthashtags'),
+            model_name="post",
+            name="hashtags",
+            field=models.ManyToManyField(
+                related_name="post_hashtags", to="blog.posthashtags"
+            ),
         ),
     ]
