@@ -1,10 +1,11 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 
 from .views import (
     UserListView,
     LogoutView,
     UserLoginView,
-    UserProfile,
+    UserProfileViewSet,
     UserRegisterView,
     FollowUserAPIView,
     UnfollowUserAPIView,
@@ -12,11 +13,16 @@ from .views import (
     FollowersList,
 )
 
+router = DefaultRouter()
+router.register("user-profile", UserProfileViewSet, basename="user-profile")
+
+
 urlpatterns = [
+    path("", include(router.urls)),
     path("login/", UserLoginView.as_view(), name="token_obtain_pair"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("users-list/", UserListView.as_view(), name="users-list"),
-    path("user-profile/", UserProfile.as_view(), name="user-profile"),
+    # path("user-profile/", UserProfile.as_view(), name="user-profile"),
     path("register/", UserRegisterView.as_view(), name="user-registration"),
     path(
         "follow/<int:user_id>/",

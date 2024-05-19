@@ -5,17 +5,17 @@ from drf_spectacular.utils import (
     OpenApiParameter,
     OpenApiResponse,
 )
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import action
 from rest_framework.response import Response
 from users.serializers import (
     UserSerializer,
     UserProfileSerializer,
     UserListSerializer,
-    UserLoginSerializer,
+    UserLoginSerializer, UserImageSerializer,
 )
 
 
@@ -105,14 +105,29 @@ class UserLoginView(APIView):
             return Response({"error": "Invalid credentials"}, status=401)
 
 
-class UserProfile(generics.RetrieveUpdateAPIView):
-    queryset = get_user_model()
+class UserProfileViewSet(viewsets.ModelViewSet):
+    queryset = get_user_model().objects.all()
     user = get_user_model()
     permission_classes = (IsAuthenticated,)
     serializer_class = UserProfileSerializer
 
     def get_object(self):
         return self.request.user
+
+    def get_serializer_class(self):
+        if self.action == list:
+            return UserSerializer
+        elif self.action == "upload_image":
+            return UserImageSerializer
+        return UserSerializer
+
+    @action(methods=["POST"], detail=False, url_path="upload-image")
+    def upload_image(self, request):
+        images = self.get_object()
+        serializer = self.get_serializer(images, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class UserRegisterView(generics.CreateAPIView):
